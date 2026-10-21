@@ -1,11 +1,21 @@
 [package]
 name = "rusty-scape"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Dodge the falling blocks! A tiny arcade game built with macroquad."
+license-file = "LICENSE"
 
 [dependencies]
-ggez = "0.9.0-rc0"
-rand = "0.8.5"
+# Pinned exactly: web/mq_js_bundle.js must match the miniquad version macroquad uses.
+macroquad = { version = "=0.4.14", default-features = false, features = ["audio"] }
 
+[profile.release]
+# Note: keep the default panic=unwind. quad-snd panics on its own thread when a
+# machine has no audio device; unwinding keeps the game running silently.
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev.package."*"]
+opt-level = 2
