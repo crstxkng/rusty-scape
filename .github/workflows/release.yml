@@ -109,6 +109,12 @@ jobs:
             echo "::error::BUTLER_API_KEY secret is not set. Create an API key at https://itch.io/user/settings/api-keys and add it under Settings > Secrets and variables > Actions > Secrets."
             exit 1
           fi
+          # Accept either "user/game" or a page URL like "https://user.itch.io/game".
+          ITCH_GAME=$(echo "$ITCH_GAME" | tr -d '[:space:]' | sed -E 's#^(https?://)?([^./]+)\.itch\.io/([^/?#]+).*#\2/\3#')
+          case "$ITCH_GAME" in
+            */*) ;;
+            *) echo "::error::ITCH_GAME must look like user/game, got '$ITCH_GAME'"; exit 1 ;;
+          esac
           echo "Publishing to https://${ITCH_GAME%%/*}.itch.io/${ITCH_GAME#*/}"
           VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
           curl -sSfL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
