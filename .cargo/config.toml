@@ -1,0 +1,4 @@
+# miniquad/macroquad import their JS functions as undefined symbols that the
+# browser bundle (web/mq_js_bundle.js) provides at load time.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=--allow-undefined"]

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Rusty Scape</title>
+    <style>
+        html, body, canvas {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: absolute;
+            background: black;
+            z-index: 0;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="glcanvas" tabindex="1"></canvas>
+    <script src="mq_js_bundle.js"></script>
+    <script>
+        // Persists high scores and settings in localStorage (see src/storage.rs).
+        miniquad_add_plugin({
+            name: "rusty_scape_storage",
+            version: 1,
+            register_plugin: function (importObject) {
+                importObject.env.rusty_scape_storage_get = function (slot) {
+                    try {
+                        var v = window.localStorage.getItem("rusty-scape:" + slot);
+                        return v === null ? NaN : parseFloat(v);
+                    } catch (e) {
+                        return NaN;
+                    }
+                };
+                importObject.env.rusty_scape_storage_set = function (slot, value) {
+                    try {
+                        window.localStorage.setItem("rusty-scape:" + slot, String(value));
+                    } catch (e) { /* storage blocked (private mode / sandboxed iframe) */ }
+                };
+            }
+        });
+        load("rusty-scape.wasm");
+        // Grab keyboard focus so arrow keys work immediately inside the itch.io iframe.
+        document.getElementById("glcanvas").focus();
+        window.addEventListener("pointerdown", function () {
+            document.getElementById("glcanvas").focus();
+        });
+    </script>
+</body>
+</html>
