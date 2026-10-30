@@ -1,8 +1,9 @@
 //! Procedurally synthesized sound effects, so the game ships without asset files.
 
-use macroquad::audio::{load_sound_from_bytes, play_sound, PlaySoundParams, Sound};
+use macroquad::audio::{load_sound_from_bytes, play_sound, stop_sound, PlaySoundParams, Sound};
 
-const SAMPLE_RATE: u32 = 22050;
+// quad-snd mixes at 44.1 kHz; matching it skips a slow resample at startup.
+const SAMPLE_RATE: u32 = 44100;
 
 #[derive(Clone, Copy)]
 pub enum Sfx {
@@ -14,11 +15,15 @@ pub enum Sfx {
     Dash,
     Hit,
     GameOver,
+    Wave,
+    NewBest,
+    Unlock,
 }
 
 pub struct Audio {
     sounds: Vec<Option<Sound>>,
-    pub muted: bool,
+    music: Option<Sound>,
+    muted: bool,
 }
 
 impl Audio {
@@ -33,11 +38,51 @@ impl Audio {
             Sfx::Dash,
             Sfx::Hit,
             Sfx::GameOver,
+            Sfx::Wave,
+            Sfx::NewBest,
+            Sfx::Unlock,
         ] {
             let wav = to_wav(&synth(sfx));
             sounds.push(load_sound_from_bytes(&wav).await.ok());
         }
-        Audio { sounds, muted }
+        let music = load_sound_from_bytes(&to_wav(&synth_music())).await.ok();
+        let audio = Audio {
+            sounds,
+            music,
+            muted,
+        };
+        audio.start_music();
+        audio
+    }
+
+    pub fn muted(&self) -> bool {
+        self.muted
+    }
+
+    pub fn set_muted(&mut self, muted: bool) {
+        self.muted = muted;
+        if muted {
+            if let Some(music) = &self.music {
+                stop_sound(music);
+            }
+        } else {
+            self.start_music();
+        }
+    }
+
+    fn start_music(&self) {
+        if self.muted {
+            return;
+        }
+        if let Some(music) = &self.music {
+            play_sound(
+                music,
+                PlaySoundParams {
+                    looped: true,
+                    volume: 0.3,
+                },
+            );
+        }
     }
 
     pub fn play(&self, sfx: Sfx) {
@@ -160,6 +205,72 @@ fn synth(sfx: Sfx) -> Vec<f32> {
                 wave: Square,
             },
         ],
+        Sfx::Wave => &[
+            Tone {
+                f0: 220.0,
+                f1: 440.0,
+                dur: 0.12,
+                wave: Square,
+            },
+            Tone {
+                f0: 220.0,
+                f1: 440.0,
+                dur: 0.12,
+                wave: Square,
+            },
+        ],
+        Sfx::NewBest => &[
+            Tone {
+                f0: 523.0,
+                f1: 523.0,
+                dur: 0.08,
+                wave: Square,
+            },
+            Tone {
+                f0: 659.0,
+                f1: 659.0,
+                dur: 0.08,
+                wave: Square,
+            },
+            Tone {
+                f0: 784.0,
+                f1: 784.0,
+                dur: 0.08,
+                wave: Square,
+            },
+            Tone {
+                f0: 1047.0,
+                f1: 1047.0,
+                dur: 0.25,
+                wave: Square,
+            },
+        ],
+        Sfx::Unlock => &[
+            Tone {
+                f0: 784.0,
+                f1: 784.0,
+                dur: 0.07,
+                wave: Triangle,
+            },
+            Tone {
+                f0: 988.0,
+                f1: 988.0,
+                dur: 0.07,
+                wave: Triangle,
+            },
+            Tone {
+                f0: 1319.0,
+                f1: 1319.0,
+                dur: 0.07,
+                wave: Triangle,
+            },
+            Tone {
+                f0: 1568.0,
+                f1: 1568.0,
+                dur: 0.2,
+                wave: Triangle,
+            },
+        ],
         Sfx::GameOver => &[
             Tone {
                 f0: 440.0,
@@ -222,6 +333,62 @@ fn synth(sfx: Sfx) -> Vec<f32> {
             // Short attack, linear decay to avoid clicks.
             let env = (i as f32 / 60.0).min(1.0) * (1.0 - t).powf(0.7);
             out.push(s * env * 0.35);
+        }
+    }
+    out
+}
+
+/// An upbeat 8-second chiptune loop: C - Am - F - G with arpeggios, bass and hats.
+fn synth_music() -> Vec<f32> {
+    const STEP: f32 = 0.25; // eighth notes at 120 BPM
+    const ROOTS: [i32; 4] = [60, 57, 53, 55];
+    const MINOR: [bool; 4] = [false, true, false, false];
+    const ARP: [usize; 8] = [0, 1, 2, 3, 2, 1, 2, 1];
+    let step_len = (STEP * SAMPLE_RATE as f32) as usize;
+    let total = step_len * 32;
+    let mut out = vec![0.0f32; total];
+    let freq = |midi: i32| 440.0 * 2f32.powf((midi - 69) as f32 / 12.0);
+    let mut noise: u32 = 0x9e37_79b9;
+
+    for step in 0..32 {
+        let bar = step / 8;
+        let root = ROOTS[bar];
+        let third = if MINOR[bar] { 3 } else { 4 };
+        let chord = [root, root + third, root + 7, root + 12];
+        let start = step * step_len;
+
+        // Lead arpeggio (triangle), an octave up.
+        let lead = freq(chord[ARP[step % 8]] + 12);
+        for i in 0..step_len {
+            let t = i as f32 / SAMPLE_RATE as f32;
+            let phase = (t * lead).fract();
+            let env = (1.0 - i as f32 / step_len as f32).powf(1.5) * (i as f32 / 60.0).min(1.0);
+            out[start + i] += (1.0 - 4.0 * (phase - 0.5).abs()) * env * 0.16;
+        }
+
+        // Bass on every quarter note (25% pulse).
+        if step % 2 == 0 {
+            let bass = freq(root - 24);
+            for i in 0..step_len * 2 {
+                let t = i as f32 / SAMPLE_RATE as f32;
+                let phase = (t * bass).fract();
+                let env =
+                    (1.0 - i as f32 / (step_len * 2) as f32).powf(0.8) * (i as f32 / 60.0).min(1.0);
+                let s = if phase < 0.25 { 1.0 } else { -0.33 };
+                out[(start + i) % total] += s * env * 0.11;
+            }
+        }
+
+        // Soft hi-hat on the off-beats.
+        if step % 2 == 1 {
+            let n = (0.04 * SAMPLE_RATE as f32) as usize;
+            for i in 0..n {
+                noise ^= noise << 13;
+                noise ^= noise >> 17;
+                noise ^= noise << 5;
+                let s = (noise as f32 / u32::MAX as f32) * 2.0 - 1.0;
+                out[start + i] += s * (1.0 - i as f32 / n as f32) * 0.05;
+            }
         }
     }
     out

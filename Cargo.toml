@@ -1,6 +1,6 @@
 [package]
 name = "rusty-scape"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "Dodge the falling blocks! A tiny arcade game built with macroquad."
 license-file = "LICENSE"

@@ -85,9 +85,10 @@ jobs:
     permissions:
       contents: write
     env:
-      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-      # Set this repository variable to "<itch-username>/<game-slug>", e.g. "crstxkng/rusty-scape".
-      ITCH_GAME: ${{ vars.ITCH_GAME }}
+      # Repository secret holding an itch.io API key (https://itch.io/user/settings/api-keys).
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY || secrets.BUTLER_CREDENTIALS }}
+      # "<itch-username>/<game-slug>". Override with an ITCH_GAME repository variable.
+      ITCH_GAME: ${{ vars.ITCH_GAME || secrets.ITCH_GAME || 'crstxkng/rusty-scape' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -103,8 +104,18 @@ jobs:
           ls -R builds | head -50
 
       - name: Push to itch.io with butler
-        if: env.BUTLER_API_KEY != '' && env.ITCH_GAME != ''
         run: |
+          if [ -z "$BUTLER_API_KEY" ]; then
+            echo "::error::BUTLER_API_KEY secret is not set. Create an API key at https://itch.io/user/settings/api-keys and add it under Settings > Secrets and variables > Actions > Secrets."
+            exit 1
+          fi
+          # Accept either "user/game" or a page URL like "https://user.itch.io/game".
+          ITCH_GAME=$(echo "$ITCH_GAME" | tr -d '[:space:]' | sed -E 's#^(https?://)?([^./]+)\.itch\.io/([^/?#]+).*#\2/\3#')
+          case "$ITCH_GAME" in
+            */*) ;;
+            *) echo "::error::ITCH_GAME must look like user/game, got '$ITCH_GAME'"; exit 1 ;;
+          esac
+          echo "Publishing to https://${ITCH_GAME%%/*}.itch.io/${ITCH_GAME#*/}"
           VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
           curl -sSfL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
           unzip -q butler.zip -d butler && chmod +x butler/butler
