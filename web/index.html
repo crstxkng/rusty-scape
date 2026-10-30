@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#211f4d">
     <title>Rusty Scape</title>
     <style>
         html, body, canvas {
@@ -15,6 +16,11 @@
             background: black;
             z-index: 0;
             touch-action: none;
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
@@ -22,7 +28,8 @@
     <canvas id="glcanvas" tabindex="1"></canvas>
     <script src="mq_js_bundle.js"></script>
     <script>
-        // Persists high scores and settings in localStorage (see src/storage.rs).
+        // Persists high scores and settings in localStorage and exposes
+        // phone vibration (see src/storage.rs).
         miniquad_add_plugin({
             name: "rusty_scape_storage",
             version: 1,
@@ -40,14 +47,22 @@
                         window.localStorage.setItem("rusty-scape:" + slot, String(value));
                     } catch (e) { /* storage blocked (private mode / sandboxed iframe) */ }
                 };
+                importObject.env.rusty_scape_vibrate = function (ms) {
+                    try {
+                        if (navigator.vibrate) navigator.vibrate(ms);
+                    } catch (e) { /* not supported */ }
+                };
             }
         });
         load("rusty-scape.wasm");
         // Grab keyboard focus so arrow keys work immediately inside the itch.io iframe.
-        document.getElementById("glcanvas").focus();
-        window.addEventListener("pointerdown", function () {
-            document.getElementById("glcanvas").focus();
-        });
+        // (mq_js_bundle.js already declares a global named `canvas`.)
+        var gameCanvas = document.getElementById("glcanvas");
+        gameCanvas.focus();
+        window.addEventListener("pointerdown", function () { gameCanvas.focus(); });
+        // Block the long-press menu and pinch/double-tap zoom on phones.
+        gameCanvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+        document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
     </script>
 </body>
 </html>

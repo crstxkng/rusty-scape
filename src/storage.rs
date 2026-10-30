@@ -1,10 +1,18 @@
-//! Tiny key/value persistence for high scores and settings.
+//! Tiny key/value persistence for high scores, coins and settings, plus
+//! haptic feedback.
 //!
 //! Desktop builds write a text file in the platform's data directory.
-//! Web builds call into `localStorage` through the JS plugin in `web/index.html`.
+//! Web builds call into `localStorage` / `navigator.vibrate` through the JS
+//! plugin in `web/index.html`.
 
 pub const SLOT_SKIN: u32 = 100;
 pub const SLOT_MUTED: u32 = 101;
+/// Coins banked across runs, spent on skins.
+pub const SLOT_WALLET: u32 = 102;
+/// Bitmask of unlocked skins.
+pub const SLOT_UNLOCKED: u32 = 103;
+/// Number of runs started, used to show control hints to new players.
+pub const SLOT_RUNS: u32 = 104;
 
 pub fn high_score_slot(mode_index: usize) -> u32 {
     mode_index as u32
@@ -15,6 +23,11 @@ mod backend {
     extern "C" {
         fn rusty_scape_storage_get(slot: u32) -> f64;
         fn rusty_scape_storage_set(slot: u32, value: f64);
+        fn rusty_scape_vibrate(ms: u32);
+    }
+
+    pub fn vibrate(ms: u32) {
+        unsafe { rusty_scape_vibrate(ms) }
     }
 
     /// Lets the JS plugin loader confirm the Rust side matches.
@@ -55,6 +68,9 @@ mod backend {
         Some(base.join("rusty-scape").join("save.txt"))
     }
 
+    /// Desktop has no rumble; feedback comes from sound and screen shake.
+    pub fn vibrate(_ms: u32) {}
+
     fn load_all() -> BTreeMap<u32, f64> {
         let Some(path) = save_path() else {
             return BTreeMap::new();
@@ -86,4 +102,4 @@ mod backend {
     }
 }
 
-pub use backend::{get, set};
+pub use backend::{get, set, vibrate};

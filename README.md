@@ -2,43 +2,48 @@
 
 A small arcade game written in Rust: blocks fall from the sky and you dodge them.
 
-![Menu](docs/menu.png)
+<p>
+  <img src="docs/menu.png" alt="Menu" width="62%">
+  <img src="docs/mobile.png" alt="Phone layout" width="22%">
+</p>
+
 ![Gameplay](docs/gameplay.png)
 
-Built with [macroquad](https://macroquad.rs/), so the same code runs on **Windows, macOS, Linux and in the browser (WebAssembly)**. It also runs on phones and tablets in the browser.
+Built with [macroquad](https://macroquad.rs/), so the same code runs on **Windows, macOS, Linux and in the browser (WebAssembly)**. The browser version is made for phones too: it switches to a tall layout when the phone is held upright and has touch controls.
 
 ## Game modes
 
 | Mode | What's different |
 |------|------------------|
 | **Classic** | The original. One hit and the run is over. |
-| **Hardcore** | Faster blocks, more of them, no power-ups. Scores count double. |
-| **Zen** | Three lives and a slower pace. Scores count half. |
+| **Hardcore** | Faster blocks, more frequent waves, no power-ups. Scores count double. |
+| **Zen** | Three hearts and a slower pace. Scores count half. |
 | **Gold Rush** | A 60-second run where coins rain down. Grab as many as you can. |
 | **Chaos** | Blocks come in every size, drift sideways and bounce off the walls. Scores count 1.5x. |
 
-Each mode keeps its own high score. Scores are saved to disk on desktop and to `localStorage` in the browser.
+Each mode keeps its own high score. Progress is saved to disk on desktop and to `localStorage` in the browser.
 
-There are also **6 player skins** (Rust, Chrome, Neon, Ember, Violet, Gold). Pick one in the menu.
+## How a run plays out
 
-## Mechanics
-
-- **Smooth movement** with acceleration, squash & stretch, and a bounce off the walls.
-- **Dash**: a quick burst of speed. You pass through blocks while dashing, and it has a short cooldown.
-- **Near misses**: brushing past a block gives bonus points and builds a combo multiplier (up to x3).
-- **Pickups**: coins (points), shield (absorbs one hit), slow-mo (slows the world down for 4 s).
-- **Difficulty** goes up over time: blocks fall faster and spawn more often, and wide slabs appear.
-- Particles, screen shake, a parallax starfield, and sound effects synthesized in code (no asset files).
+- **Rain, then waves.** Blocks rain down for a while, then a **wave** hits, announced on screen: *Walls* (find the gap), *Zig-Zag*, *Sniper* (blocks aimed at you), *Stairs* or *Storm*. Surviving a wave pays a bonus and drops a rainbow of coins, then the rain comes back faster.
+- **Fair warnings.** Every block is announced by an arrow and a faint lane at the top before it enters the screen.
+- **Dash** through blocks with a quick burst of speed. It has a short cooldown, shown under your character.
+- **Close calls**: brushing past a block gives bonus points and builds a combo multiplier (up to x3).
+- **Power-ups**: shield (absorbs one hit), slow-mo, and magnet (pulls coins to you).
+- **New best!** pops up the moment you beat your record, mid-run.
+- **Coins are kept between runs.** Spend them on **8 skins** in the menu. The results screen shows how close you are to the next one.
 
 ## Controls
 
-| Action | Keyboard | Mouse / Touch |
-|--------|----------|---------------|
-| Move | ← → or A / D | Hold and drag |
-| Dash | Space / Shift / ↑ / W | Right click / tap with a second finger |
-| Pause | P / Esc | ⏸ button (top right) |
-| Menu: choose mode / skin | ↑ ↓ / ← → , Enter to play | Tap a mode, tap it again (or PLAY) to start |
-| Mute / Fullscreen | M / F | Sound button in the menu |
+| Action | Phone / Mouse | Keyboard |
+|--------|---------------|----------|
+| Move | Drag anywhere (your finger never covers the character) | ← → or A / D |
+| Dash | Tap | Space / Shift / ↑ / W |
+| Pause | ⏸ button (top right) | P / Esc |
+| Menu | Tap a mode, then PLAY | ↑ ↓ mode, ← → skin, Enter play, B buy skin |
+| Sound / Fullscreen | Speaker button in the menu | M / F |
+
+Phones also vibrate on hits, close calls and coins (where the browser supports it).
 
 ## Running locally
 
@@ -92,7 +97,7 @@ The workflow builds all platforms and pushes each one to its own itch.io channel
 
 - Tick **"This file will be played in the browser"** on the `html5` upload.
 - Tick the platform icons on the other uploads. itch usually detects them from the channel names.
-- *Embed options*: viewport **960 × 640**, enable **Mobile friendly** and the **Fullscreen button**.
+- *Embed options*: viewport **960 × 640**, enable **Mobile friendly** (orientation: *Default*, since the game adapts to both) and the **Fullscreen button**. On phones itch.io opens the game full screen, where the tall layout kicks in.
 - Suggested tags: `arcade`, `dodge`, `retro`, `rust`, `minimalist`.
 
 ### Manual upload (no CI)
@@ -108,10 +113,11 @@ src/
   main.rs     window config, procedural icon, main loop
   game.rs     game state, gameplay, menus, HUD
   modes.rs    game variants and player skins
-  audio.rs    synthesized sound effects
-  fx.rs       particles, floating text, starfield
-  ui.rs       resolution-independent drawing & input helpers
-  storage.rs  high-score persistence (file on desktop, localStorage on web)
+  audio.rs    synthesized sound effects and music
+  fx.rs       particles, floating text, banners, background
+  ui.rs       adaptive (landscape/portrait) canvas, font, drawing helpers
+  storage.rs  save data (file on desktop, localStorage on web) and vibration
+assets/       Lilita One font (SIL Open Font License, see assets/OFL.txt)
 web/          index.html + macroquad JS loader for the browser build
 scripts/      build & packaging scripts
 ```

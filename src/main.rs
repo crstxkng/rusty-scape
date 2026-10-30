@@ -14,10 +14,10 @@ use macroquad::prelude::*;
 fn window_conf() -> Conf {
     Conf {
         window_title: "Rusty Scape".to_owned(),
-        window_width: ui::VIRTUAL_W as i32,
-        window_height: ui::VIRTUAL_H as i32,
+        window_width: 960,
+        window_height: 640,
         window_resizable: true,
-        high_dpi: false,
+        high_dpi: true,
         sample_count: 4,
         icon: Some(Icon {
             small: icon_pixels::<{ 16 * 16 * 4 }>(16),
@@ -57,6 +57,15 @@ fn icon_pixels<const N: usize>(size: usize) -> [u8; N] {
 #[macroquad::main(window_conf)]
 async fn main() {
     rand::srand(macroquad::miniquad::date::now().to_bits());
+    ui::load_font();
+
+    // Sounds are synthesized at startup; show something friendly meanwhile.
+    clear_background(Color::new(0.13, 0.12, 0.3, 1.0));
+    ui::View::compute().apply(Vec2::ZERO);
+    ui::text_shadow_centered("Loading...", ui::vw() / 2.0, ui::vh() / 2.0, 48.0, WHITE);
+    set_default_camera();
+    next_frame().await;
+
     let mut game = game::Game::new().await;
     loop {
         game.frame();
