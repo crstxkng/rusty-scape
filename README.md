@@ -77,11 +77,11 @@ You don't need all three operating systems: the GitHub Actions workflow (`.githu
 
 1. Create the project on itch.io (**Dashboard → Create new project**).
    - *Kind of project*: **HTML**
-   - Save it once, even as a draft, so the URL exists (this game lives at <https://cracking.itch.io/rusty-scape>).
+   - Save it once, even as a draft, so the URL exists (this game lives at <https://crstxkng.itch.io/rusty-scape>).
 2. Generate a butler API key: <https://itch.io/user/settings/api-keys>.
 3. In this GitHub repo, go to **Settings → Secrets and variables → Actions**:
    - Add a **secret** named `BUTLER_API_KEY` containing the key.
-   - Optional: add a **variable** named `ITCH_GAME` set to `<itch-username>/<game-slug>`. It defaults to `cracking/rusty-scape` (<https://cracking.itch.io/rusty-scape>).
+   - Optional: add a **variable** named `ITCH_GAME` set to `<itch-username>/<game-slug>`. It defaults to `crstxkng/rusty-scape` (<https://crstxkng.itch.io/rusty-scape>).
 
 ### Release
 

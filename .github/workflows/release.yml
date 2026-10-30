@@ -88,7 +88,7 @@ jobs:
       # Repository secret holding an itch.io API key (https://itch.io/user/settings/api-keys).
       BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY || secrets.BUTLER_CREDENTIALS }}
       # "<itch-username>/<game-slug>". Override with an ITCH_GAME repository variable.
-      ITCH_GAME: ${{ vars.ITCH_GAME || secrets.ITCH_GAME || 'cracking/rusty-scape' }}
+      ITCH_GAME: ${{ vars.ITCH_GAME || secrets.ITCH_GAME || 'crstxkng/rusty-scape' }}
     steps:
       - uses: actions/checkout@v4
 
