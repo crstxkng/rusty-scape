@@ -1,4 +1,5 @@
-//! Game variants. Each mode is a set of tuning knobs consumed by `game.rs`.
+//! The scapes on the menu, and the variants of Rain Scape (the falling-blocks
+//! game). Each Rain variant is a set of tuning knobs consumed by `scape/rain.rs`.
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
@@ -65,7 +66,7 @@ impl Mode {
                 wave_every: 16.0,
                 score_mult: 1.0,
                 powerup_chance: 0.05,
-                coin_chance: 0.14,
+                coin_chance: 0.22,
                 drifting: false,
                 time_limit: None,
                 color: (1.0, 0.55, 0.2),
@@ -82,7 +83,7 @@ impl Mode {
                 wave_every: 11.0,
                 score_mult: 2.0,
                 powerup_chance: 0.0,
-                coin_chance: 0.1,
+                coin_chance: 0.18,
                 drifting: false,
                 time_limit: None,
                 color: (1.0, 0.3, 0.35),
@@ -99,7 +100,7 @@ impl Mode {
                 wave_every: 22.0,
                 score_mult: 0.5,
                 powerup_chance: 0.07,
-                coin_chance: 0.16,
+                coin_chance: 0.24,
                 drifting: false,
                 time_limit: None,
                 color: (0.3, 0.85, 0.7),
@@ -133,7 +134,7 @@ impl Mode {
                 wave_every: 15.0,
                 score_mult: 1.5,
                 powerup_chance: 0.06,
-                coin_chance: 0.14,
+                coin_chance: 0.22,
                 drifting: true,
                 time_limit: None,
                 color: (0.75, 0.45, 1.0),
@@ -144,61 +145,80 @@ impl Mode {
     }
 }
 
-/// Cosmetic player variants, unlocked with coins collected across runs.
-pub struct Skin {
-    pub name: &'static str,
-    pub body: (f32, f32, f32),
-    pub trail: (f32, f32, f32),
-    pub price: u32,
+/// The game styles listed on the menu.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScapeKind {
+    Rain,
+    Tunnel,
+    Orbit,
+    Gravity,
+    Sea,
 }
 
-pub const SKINS: [Skin; 8] = [
-    Skin {
-        name: "Rusty",
-        body: (0.93, 0.5, 0.22),
-        trail: (1.0, 0.7, 0.3),
-        price: 0,
-    },
-    Skin {
-        name: "Minty",
-        body: (0.3, 0.88, 0.62),
-        trail: (0.4, 1.0, 0.9),
-        price: 40,
-    },
-    Skin {
-        name: "Bubble",
-        body: (1.0, 0.5, 0.7),
-        trail: (1.0, 0.75, 0.9),
-        price: 80,
-    },
-    Skin {
-        name: "Sky",
-        body: (0.35, 0.65, 1.0),
-        trail: (0.6, 0.85, 1.0),
-        price: 150,
-    },
-    Skin {
-        name: "Lemon",
-        body: (1.0, 0.86, 0.25),
-        trail: (1.0, 1.0, 0.6),
-        price: 250,
-    },
-    Skin {
-        name: "Grape",
-        body: (0.62, 0.4, 0.95),
-        trail: (0.9, 0.6, 1.0),
-        price: 400,
-    },
-    Skin {
-        name: "Snow",
-        body: (0.93, 0.95, 1.0),
-        trail: (0.7, 0.85, 1.0),
-        price: 600,
-    },
-    Skin {
-        name: "Midnight",
-        body: (0.2, 0.22, 0.35),
-        trail: (0.4, 1.0, 0.9),
-        price: 1000,
-    },
-];
+pub struct ScapeInfo {
+    pub name: &'static str,
+    pub tagline: &'static str,
+    pub color: (f32, f32, f32),
+    pub sky: ((f32, f32, f32), (f32, f32, f32)),
+}
+
+impl ScapeKind {
+    pub const ALL: [ScapeKind; 5] = [
+        ScapeKind::Rain,
+        ScapeKind::Tunnel,
+        ScapeKind::Orbit,
+        ScapeKind::Gravity,
+        ScapeKind::Sea,
+    ];
+
+    pub fn info(self) -> ScapeInfo {
+        match self {
+            ScapeKind::Rain => ScapeInfo {
+                name: "Rain Scape",
+                tagline: "Dodge the falling blocks!",
+                color: (1.0, 0.55, 0.2),
+                sky: ((0.13, 0.12, 0.3), (0.32, 0.18, 0.38)),
+            },
+            ScapeKind::Tunnel => ScapeInfo {
+                name: "Tunnel Scape",
+                tagline: "Spin the tunnel, slip through the gaps!",
+                color: (0.25, 0.85, 1.0),
+                sky: ((0.03, 0.05, 0.15), (0.08, 0.1, 0.28)),
+            },
+            ScapeKind::Orbit => ScapeInfo {
+                name: "Orbit Scape",
+                tagline: "Tap to hop between orbits!",
+                color: (1.0, 0.45, 0.75),
+                sky: ((0.06, 0.03, 0.15), (0.18, 0.06, 0.25)),
+            },
+            ScapeKind::Gravity => ScapeInfo {
+                name: "Gravity Scape",
+                tagline: "Tap to flip between floor and ceiling!",
+                color: (0.4, 1.0, 0.55),
+                sky: ((0.05, 0.16, 0.14), (0.1, 0.3, 0.22)),
+            },
+            ScapeKind::Sea => ScapeInfo {
+                name: "Deep Sea Scape",
+                tagline: "Hold to swim up, let go to sink!",
+                color: (0.3, 0.75, 1.0),
+                sky: ((0.1, 0.45, 0.7), (0.02, 0.12, 0.3)),
+            },
+        }
+    }
+
+    pub fn index(self) -> usize {
+        ScapeKind::ALL.iter().position(|k| *k == self).unwrap()
+    }
+}
+
+/// Number of high-score slots: one per Rain variant plus one per other scape.
+pub const SCORE_SLOTS: usize = Mode::ALL.len() + ScapeKind::ALL.len() - 1;
+
+/// High-score slot for a scape (and Rain variant). Rain keeps slots 0-4 so
+/// existing high scores survive.
+pub fn score_slot(kind: ScapeKind, mode: Mode) -> usize {
+    match kind {
+        ScapeKind::Rain => mode.index(),
+        other => Mode::ALL.len() + other.index() - 1,
+    }
+}

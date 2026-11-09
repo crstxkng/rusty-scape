@@ -209,8 +209,12 @@ impl Background {
         let (w, h) = (vw(), vh());
         for b in &mut self.bubbles {
             b.pos.y += speed * b.depth * dt;
+            // Wrap both ways: bubbles fall in most scapes but rise underwater.
             if b.pos.y > h + 20.0 {
                 b.pos.y -= h + 40.0;
+                b.pos.x = rand::gen_range(0.0, w);
+            } else if b.pos.y < -20.0 {
+                b.pos.y += h + 40.0;
                 b.pos.x = rand::gen_range(0.0, w);
             }
         }
