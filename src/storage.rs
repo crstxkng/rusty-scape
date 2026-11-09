@@ -5,14 +5,24 @@
 //! Web builds call into `localStorage` / `navigator.vibrate` through the JS
 //! plugin in `web/index.html`.
 
-pub const SLOT_SKIN: u32 = 100;
+// Slots 100 (v0.3 skin) and 104 (v0.3 run count) are retired; don't reuse them.
 pub const SLOT_MUTED: u32 = 101;
 /// Coins banked across runs, spent on skins.
 pub const SLOT_WALLET: u32 = 102;
 /// Bitmask of unlocked skins.
 pub const SLOT_UNLOCKED: u32 = 103;
-/// Number of runs started, used to show control hints to new players.
-pub const SLOT_RUNS: u32 = 104;
+/// Equipped animal.
+pub const SLOT_ANIMAL: u32 = 105;
+/// Bitmask of unlocked animals.
+pub const SLOT_ANIMALS: u32 = 106;
+/// Last scape and Rain variant picked on the menu.
+pub const SLOT_SCAPE: u32 = 107;
+pub const SLOT_VARIANT: u32 = 108;
+
+/// Runs played per scape, used to show control hints to newcomers.
+pub fn runs_slot(scape_index: usize) -> u32 {
+    110 + scape_index as u32
+}
 
 pub fn high_score_slot(mode_index: usize) -> u32 {
     mode_index as u32
@@ -62,6 +72,7 @@ mod backend {
             std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Application Support"))
         } else {
             std::env::var_os("XDG_DATA_HOME")
+                .filter(|v| !v.is_empty())
                 .map(PathBuf::from)
                 .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))
         }?;
